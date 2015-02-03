@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-# from pytest import raises
 
 # The parametrize function is generated, so this doesn't work:
 #
 #     from pytest.mark import parametrize
 #
 
+import re
+import json
 import shlex
 import random
 import urllib
 
 import pytest
-import requests_mock
+import responses
 parametrize = pytest.mark.parametrize
 
 # from nagios_graphite import metadata
@@ -76,8 +77,9 @@ def test_combine_with_none():
     assert combine(graphite_with_none, sum) == 11
 
 
-def make_opt(s):
-    return GraphiteNagios(list(shlex.shlex("test " + s))).options
+def options_for(s):
+    argv = shlex.split("nagios_graphite " + s)
+    return GraphiteNagios(argv).options
 
 
 def test_format_from():
@@ -86,30 +88,87 @@ def test_format_from():
 
 
 def test_graphite_querystring():
-    opts = make_opt("-T cpu.load.average -F 1minute")
+    opts = options_for("-M 'cpu.load.average' -F 1minute")
     qs = main.graphite_querystring(opts)
 
     assert urllib.urlencode({"from": main.format_from("1minute")}) in qs
-    assert urllib.urlencode({"target": opts.target}) in qs
+    assert urllib.urlencode({"target": "cpu.load.average"}) in qs
     assert urllib.urlencode({"format": "json"}) in qs
 
 
 def test_graphite_url():
-    opts = make_opt("-T cpu.load.average -H http://example.com")
-    expected = "{}?{}".format(opts.hostname, main.graphite_querystring(opts))
+    opts = options_for("-M 'cpu.load.average' -H http://example.com")
+    expected = "{}?{}".format(
+        "http://example.com", main.graphite_querystring(opts))
 
     assert main.graphite_url(opts) == expected
 
 
 def test_graphite_session_noauth():
-    opts = make_opt("-T cpu.load.average -H http://example.com")
+    opts = options_for("-M 'cpu.load.average' -H http://example.com")
     assert main.graphite_session(opts).auth is None
 
 
 def test_graphite_session_auth():
-    opts = make_opt("-T cpu.load.average -H http://example.com -U foo -P pass")
+    opts = options_for(
+        "-M 'cpu.load.average' -H http://example.com -U foo -P pass")
     assert main.graphite_session(opts).auth == ("foo", "pass")
 
 
-def test_graphite_fetch():
-    pass
+@responses.activate
+def test_graphite_fetch_success():
+    opts = options_for(
+        "-M 'cpu.load.average' -H http://example.com -U foo -P pass")
+    url_re = re.compile("^{}.*$".format(re.escape(opts.hostname)))
+
+    resp = json.dumps(graphite_with_none)
+    responses.add(
+        responses.GET, url_re,
+        body=resp, status=200,
+        content_type='application/json')
+
+    assert main.graphite_fetch(opts) == graphite_with_none
+
+
+@responses.activate
+def test_graphite_fetch_failure():
+    opts = options_for(
+        "-M 'cpu.load.average' -H http://example.com -U foo -P pass")
+    url_re = re.compile("^{}.*$".format(re.escape(opts.hostname)))
+
+    responses.add(
+        responses.GET, url_re, status=500)
+
+    assert main.graphite_fetch(opts) == []
+
+
+@responses.activate
+def test_check_graphite_success():
+    for fn_name, aggfn in FUNCTIONS.iteritems():
+        opts = options_for(
+            "-M 'cpu.load.average' -H http://example.com -U foo -P pass "
+            "-A {}".format(fn_name))
+        url_re = re.compile("^{}.*$".format(re.escape(opts.hostname)))
+
+        resp = json.dumps(graphite_with_none)
+        responses.add(
+            responses.GET, url_re,
+            body=resp, status=200,
+            content_type='application/json')
+
+        expected = main.combine(graphite_with_none, aggfn)
+        assert main.check_graphite(opts) == expected
+
+
+@responses.activate
+def test_check_graphite_failure():
+    for fn_name, aggfn in FUNCTIONS.iteritems():
+        opts = options_for(
+            "-M 'cpu.load.average' -H http://example.com -U foo -P pass "
+            "-A {}".format(fn_name))
+        url_re = re.compile("^{}.*$".format(re.escape(opts.hostname)))
+
+        responses.add(
+            responses.GET, url_re, status=500)
+
+        assert main.check_graphite(opts) is None

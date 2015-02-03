@@ -80,7 +80,11 @@ def check_graphite(opts, session=None):
     aggfn = FUNCTIONS[opts.func]
     raw_data = graphite_fetch(opts)
 
-    return combine(raw_data, aggfn)
+    if raw_data:
+        return combine(raw_data, aggfn)
+    else:
+        return None
+
 
 class GraphiteNagios(Plugin):
     username = make_option(
@@ -120,6 +124,7 @@ class GraphiteNagios(Plugin):
 
 def main(args):
     try:
+        print(sys.argv)
         return GraphiteNagios(args).check().exit()
     except Exception as e:
         message = "{}: {}".format(e.__class__.__name__, str(e))
