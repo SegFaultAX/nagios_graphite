@@ -90,12 +90,9 @@ class GraphiteNagios(Plugin):
         default="avg", choices=FUNCTIONS.keys())
 
     def check(self):
-        try:
-            value = Graphite(self.options).fetch()
-            if value is None:
-                return Response(UNKNOWN, "No results returned!")
-        except Exception as e:
-            return Response(UNKNOWN, "Client error: " + str(e))
+        value = Graphite(self.options).fetch()
+        if value is None:
+            return Response(UNKNOWN, "No results returned!")
 
         message = "{} ({} = {})".format(
             self.options.name, self.options.func, value)
@@ -104,7 +101,10 @@ class GraphiteNagios(Plugin):
         return response
 
 def main(args):
-    return GraphiteNagios(args).check().exit()
+    try:
+        return GraphiteNagios(args).check().exit()
+    except Exception as e:
+        return Response(UNKNOWN, "Client error: " + str(e))
 
 def entry_point():
     return main(sys.argv)
