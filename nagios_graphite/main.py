@@ -46,9 +46,14 @@ class Graphite(object):
 
     @property
     def query(self):
+        if not self.options.from_.startswith("-"):
+            from_ = "-" + self.options.from_
+        else:
+            from_ = self.options.from_
+
         qs = {
             "target": self.options.target,
-            "from": self.options.from_,
+            "from": from_,
             "format": "json",
         }
         return urllib.urlencode(qs)
@@ -67,29 +72,34 @@ class Graphite(object):
         return None
 
 class GraphiteNagios(Plugin):
-    username = make_option("--username", "-u",
+    username = make_option("--username", "-U",
         help="Username (HTTP Basic Auth)")
-    password = make_option("--password", "-p",
+    password = make_option("--password", "-P",
         help="Password (HTTP Basic Auth)")
 
-    name = make_option("--name", "-n",
+    name = make_option("--name", "-N",
         help="Metric name", default="metric")
-    target = make_option("--target", "-a",
+    target = make_option("--target", "-M",
         help="Graphite target (series or query)")
-    from_ = make_option("--from",
-        help="Starting offset", default="-1minute")
+    from_ = make_option("--from", "-F",
+        help="Starting offset", default="1minute")
 
-    func = make_option("--function", "-f",
+    func = make_option("--algorithm", "-A",
         help=("Algorithm for combining metrics, options: "
               "{}, (default: avg)".format(F_OPTS)),
         default="avg", choices=FUNCTIONS.keys())
 
     def check(self):
-        value = Graphite(self.options).fetch()
-        if value is None:
-            return Response(UNKNOWN, "No results returned!")
+        try:
+            value = Graphite(self.options).fetch()
+            if value is None:
+                return Response(UNKNOWN, "No results returned!")
+        except Exception as e:
+            return Response(UNKNOWN, "Client error: " + str(e))
 
-        response = self.response_for_value(value, self.options.name)
+        message = "{} ({} = {})".format(
+            self.options.name, self.options.func, value)
+        response = self.response_for_value(value, message)
         response.set_perf_data(self.options.func, value)
         return response
 
