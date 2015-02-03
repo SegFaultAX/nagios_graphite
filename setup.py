@@ -263,6 +263,7 @@ setup_dict = dict(
         'pytest==2.5.1',
         'mock==1.0.1',
         'flake8==2.1.0',
+        'requests_mock==0.6.0',
     ],
     cmdclass={'test': TestAllCommand},
     zip_safe=False,  # don't use eggs
