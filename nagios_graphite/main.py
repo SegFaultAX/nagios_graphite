@@ -124,7 +124,6 @@ class GraphiteNagios(Plugin):
 
 def main(args):
     try:
-        print(sys.argv)
         return GraphiteNagios(args).check().exit()
     except Exception as e:
         message = "{}: {}".format(e.__class__.__name__, str(e))

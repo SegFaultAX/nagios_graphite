@@ -8,7 +8,7 @@ Information describing the project.
 package = 'nagios_graphite'
 project = "Nagios Graphite"
 project_no_spaces = project.replace(' ', '')
-version = '0.1.1'
+version = '0.1.2'
 description = 'Nagios command for Graphite metrics'
 authors = ['Michael-Keith Bernard']
 authors_string = ', '.join(authors)
