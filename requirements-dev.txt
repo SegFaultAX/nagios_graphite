@@ -6,7 +6,7 @@ pytest==2.6.4
 pytest-cov==1.8.1
 py==1.4.26
 mock==1.0.1
-requests_mock==0.6.0
+responses==0.3.0
 
 # Linting
 flake8==2.1.0

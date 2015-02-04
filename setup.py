@@ -250,7 +250,7 @@ setup_dict = dict(
         'Programming Language :: Python :: 3.3',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Software Distribution',
-        'Topic :: System :: Systems Administration'
+        'Topic :: System :: Systems Administration',
         'Intended Audience :: System Administrators',
     ],
     packages=find_packages(exclude=(TESTS_DIRECTORY,)),
@@ -263,7 +263,7 @@ setup_dict = dict(
         'pytest==2.5.1',
         'mock==1.0.1',
         'flake8==2.1.0',
-        'requests_mock==0.6.0',
+        'responses==0.3.0',
     ],
     cmdclass={'test': TestAllCommand},
     zip_safe=False,  # don't use eggs
