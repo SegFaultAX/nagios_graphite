@@ -115,7 +115,7 @@ class GraphiteNagios(Plugin):
         if value is None:
             return Response(UNKNOWN, "No results returned!")
 
-        message = "{} ({} = {})".format(
+        message = "{} ({} is {})".format(
             self.options.name, self.options.func, value)
         response = self.response_for_value(value, message)
         response.set_perf_data(self.options.func, value)
