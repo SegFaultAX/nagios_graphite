@@ -55,6 +55,12 @@ def test_999th():
     assert FUNCTIONS["999th"](xs) == 999
 
 
+def test_raising_aggregators():
+    for name, fn in FUNCTIONS.iteritems():
+        with pytest.raises(main.EmptyQueryResult):
+            fn([])
+
+
 graphite_without_none = [
     {"target": "foo", "datapoints": [[1, 10], [2, 11], [3, 12]]},
     {"target": "bar", "datapoints": [[4, 10], [5, 11], [6, 12]]},

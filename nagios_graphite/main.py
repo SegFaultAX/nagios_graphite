@@ -6,9 +6,14 @@ from __future__ import print_function
 
 import sys
 import urllib
+import functools
 
 import requests
 from pynagios import Plugin, Response, make_option, UNKNOWN
+
+
+class EmptyQueryResult(Exception):
+    pass
 
 
 def percentile(n):
@@ -16,7 +21,19 @@ def percentile(n):
 
     return lambda xs: sorted(xs)[int(len(xs)*n)]
 
-FUNCTIONS = {
+
+def wrap_aggregator(fn):
+    """Wrapper for aggregation function that throws for empty results"""
+
+    @functools.wraps(fn)
+    def wrapper(xs):
+        if not xs:
+            raise EmptyQueryResult("Graphite query returned no results")
+        return fn(xs)
+    return wrapper
+
+
+AGGREGATION_FUNCTIONS = {
     "sum": sum,
     "min": min,
     "max": max,
@@ -26,6 +43,12 @@ FUNCTIONS = {
     "99th":   percentile(0.99),
     "999th":  percentile(0.999)
 }
+
+FUNCTIONS = {
+    k: wrap_aggregator(v)
+    for k, v in AGGREGATION_FUNCTIONS.iteritems()
+}
+
 F_OPTS = ", ".join(FUNCTIONS.keys())
 
 
