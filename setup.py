@@ -238,7 +238,7 @@ setup_dict = dict(
     # Find a list of classifiers here:
     # <http://pypi.python.org/pypi?%3Aaction=list_classifiers>
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
