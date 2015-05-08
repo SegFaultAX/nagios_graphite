@@ -22,32 +22,55 @@ def percentile(n):
     return lambda xs: sorted(xs)[int(len(xs)*n)]
 
 
-def wrap_aggregator(fn):
-    """Wrapper for aggregation function that throws for empty results"""
+def remove_null(aggfn):
+    """Decorator for removing null values for `aggfn`"""
 
-    @functools.wraps(fn)
+    @functools.wraps(aggfn)
     def wrapper(xs):
-        if not xs:
-            raise EmptyQueryResult("Graphite query returned no results")
-        return fn(xs)
+        return aggfn([x for x in xs if x is not None])
     return wrapper
 
 
-AGGREGATION_FUNCTIONS = {
-    "sum": sum,
-    "min": min,
-    "max": max,
-    "avg": lambda xs: sum(xs) / len(xs),
-    "median": percentile(0.5),
-    "95th":   percentile(0.95),
-    "99th":   percentile(0.99),
-    "999th":  percentile(0.999)
-}
+def raise_on_empty(aggfn):
+    """Decorator for raising EmptyQueryResult on empty results"""
+
+    @functools.wraps(aggfn)
+    def wrapper(xs):
+        if not xs:
+            raise EmptyQueryResult("Graphite query returned no results")
+        return aggfn(xs)
+    return wrapper
+
+
+def values_only(aggfn):
+    return remove_null(raise_on_empty(aggfn))
+
+
+def nullcnt(xs):
+    """Counts null values in Graphite query result"""
+
+    return len([x for x in xs if x is None])
+
+
+def nullpct(xs):
+    """Calculates percentage of null values in Graphite query result"""
+
+    return float(nullcnt(xs)) / float(len(xs))
+
 
 FUNCTIONS = {
-    k: wrap_aggregator(v)
-    for k, v in AGGREGATION_FUNCTIONS.iteritems()
+    "sum":    values_only(sum),
+    "min":    values_only(min),
+    "max":    values_only(max),
+    "avg":    values_only(lambda xs: sum(xs) / len(xs)),
+    "median": values_only(percentile(0.5)),
+    "95th":   values_only(percentile(0.95)),
+    "99th":   values_only(percentile(0.99)),
+    "999th":  values_only(percentile(0.999)),
+    "nullcnt": raise_on_empty(nullcnt),
+    "nullpct": raise_on_empty(nullpct),
 }
+
 
 F_OPTS = ", ".join(FUNCTIONS.keys())
 
@@ -56,7 +79,7 @@ def combine(series, aggfn):
     """Combine Graphite series data using aggfn"""
 
     pairs = reduce(lambda a, b: a + b, [e["datapoints"] for e in series], [])
-    points = [e[0] for e in pairs if e[0] is not None]
+    points = [e[0] for e in pairs]
     return aggfn(points)
 
 

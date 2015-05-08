@@ -19,6 +19,51 @@ parametrize = pytest.mark.parametrize
 from nagios_graphite import main
 from nagios_graphite.main import FUNCTIONS, combine, GraphiteNagios
 
+
+def test_remove_null_without_null():
+    xs = [1, 2, 3, 4]
+    assert main.remove_null(sum)(xs) == 10
+
+
+def test_remove_null_with_null():
+    xs = [1, None, 2, None]
+    assert main.remove_null(sum)(xs) == 3
+
+
+def test_raise_on_empty_without_empty():
+    xs = [1, 2, 3, 4]
+    assert main.raise_on_empty(sum)(xs) == 10
+
+
+def test_raise_on_empty_with_empty():
+    xs = []
+    with pytest.raises(main.EmptyQueryResult):
+        main.raise_on_empty(sum)(xs)
+
+
+def test_values_only_with_values():
+    assert main.values_only(sum)([1, 2, 3]) == 6
+    assert main.values_only(sum)([1, None, 3]) == 4
+
+
+def test_values_only_without_values():
+    with pytest.raises(main.EmptyQueryResult):
+        main.values_only(sum)([])
+
+    with pytest.raises(main.EmptyQueryResult):
+        main.values_only(sum)([None, None, None])
+
+
+def test_nullcnt():
+    assert main.nullcnt([1, 2, 3]) == 0
+    assert main.nullcnt([1, None, None]) == 2
+
+
+def test_nullpct():
+    assert main.nullpct([1, 2, 3]) == 0.0
+    assert main.nullpct([None, 2, 3, None]) == 0.5
+
+
 xs = range(1000)
 random.shuffle(xs)
 
@@ -76,11 +121,13 @@ def test_combine_empty():
 
 
 def test_combine_without_none():
-    assert combine(graphite_without_none, sum) == 21
+    id_ = lambda xs: xs
+    assert combine(graphite_without_none, id_) == [1, 2, 3, 4, 5, 6]
 
 
 def test_combine_with_none():
-    assert combine(graphite_with_none, sum) == 11
+    id_ = lambda xs: xs
+    assert combine(graphite_with_none, id_) == [1, 2, 3, None, 5, None]
 
 
 def options_for(s):
