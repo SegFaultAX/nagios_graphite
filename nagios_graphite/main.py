@@ -153,7 +153,7 @@ class GraphiteNagios(Plugin):
 
     until = make_option(
         "--until", "-u",
-        help="Ending offset", default="now")
+        help="Ending offset", default="")
 
     func = make_option(
         "--algorithm", "-A",
