@@ -94,6 +94,7 @@ def graphite_querystring(opts):
     qs = {
         "target": opts.target,
         "from": format_from(opts.from_),
+        "until": format_from(opts.until),
         "format": "json",
     }
 
@@ -149,6 +150,10 @@ class GraphiteNagios(Plugin):
     from_ = make_option(
         "--from", "-F",
         help="Starting offset", default="1minute")
+
+    until = make_option(
+        "--until", "-u",
+        help="Ending offset", default="now")
 
     func = make_option(
         "--algorithm", "-A",
