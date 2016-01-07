@@ -103,7 +103,7 @@ def graphite_querystring(opts):
 
 def graphite_url(opts):
     qs = graphite_querystring(opts)
-    return "{}?{}".format(opts.hostname, qs)
+    return "{0}?{1}".format(opts.hostname, qs)
 
 
 def graphite_session(opts):
@@ -158,7 +158,7 @@ class GraphiteNagios(Plugin):
     func = make_option(
         "--algorithm", "-A",
         help=("Algorithm for combining metrics, options: "
-              "{}, (default: avg)".format(F_OPTS)),
+              "{0}, (default: avg)".format(F_OPTS)),
         default="avg", choices=FUNCTIONS.keys())
 
     def check(self):
@@ -166,7 +166,7 @@ class GraphiteNagios(Plugin):
         if value is None:
             return Response(UNKNOWN, "No results returned!")
 
-        message = "{} ({} is {})".format(
+        message = "{0} ({1} is {2})".format(
             self.options.name, self.options.func, value)
         response = self.response_for_value(value, message)
         response.set_perf_data(self.options.func, value)
@@ -177,7 +177,7 @@ def main(args):
     try:
         return GraphiteNagios(args).check().exit()
     except Exception as e:
-        message = "{}: {}".format(e.__class__.__name__, str(e))
+        message = "{0}: {1}".format(e.__class__.__name__, str(e))
         Response(UNKNOWN, "Client error: " + message).exit()
 
 
