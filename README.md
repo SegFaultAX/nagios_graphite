@@ -31,6 +31,8 @@ Options:
                         min, max, sum, avg, median, 99th, (default: avg)
   -F FROM_, --from=FROM_
                         Starting offset
+  -u UNTIL, --until=UNTIL
+                        Ending offset
   -P PASSWORD, --password=PASSWORD
                         Password (HTTP Basic Auth)
   -M TARGET, --target=TARGET
