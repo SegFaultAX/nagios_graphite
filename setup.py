@@ -255,8 +255,8 @@ setup_dict = dict(
     ],
     packages=find_packages(exclude=(TESTS_DIRECTORY,)),
     install_requires=[
-        'requests==2.5.1',
-        'pynagios==0.1.1',
+        'requests>=2.5.1',
+        'pynagios>=0.1.1',
     ] + python_version_specific_requires,
     # Allow tests to be run with `python setup.py test'.
     tests_require=[
