@@ -27,14 +27,17 @@ Options:
                         Username (HTTP Basic Auth)
   -N NAME, --name=NAME  Metric name
   -A FUNC, --algorithm=FUNC
-                        Algorithm for combining metrics, options: 999th, 95th,
-                        min, max, sum, avg, median, 99th, (default: avg)
+                        Algorithm for combining metrics, options: nullpct,
+                        999th, 95th, min, max, sum, avg, median, 99th,
+                        nullcnt, (default: avg)
   -F FROM_, --from=FROM_
                         Starting offset
-  -u UNTIL, --until=UNTIL
-                        Ending offset
   -P PASSWORD, --password=PASSWORD
                         Password (HTTP Basic Auth)
+  -o HTTP_TIMEOUT, --http-timeout=HTTP_TIMEOUT
+                        HTTP request timeout
+  -u UNTIL, --until=UNTIL
+                        Ending offset
   -M TARGET, --target=TARGET
                         Graphite target (series or query)
   -v, --verbose

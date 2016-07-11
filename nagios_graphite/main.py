@@ -118,7 +118,7 @@ def graphite_fetch(opts, session=None):
         session = graphite_session(opts)
 
     url = graphite_url(opts)
-    resp = session.get(url)
+    resp = session.get(url, timeout=opts.http_timeout)
 
     return resp.json() if resp.ok else []
 
@@ -160,6 +160,12 @@ class GraphiteNagios(Plugin):
         help=("Algorithm for combining metrics, options: "
               "{0}, (default: avg)".format(F_OPTS)),
         default="avg", choices=FUNCTIONS.keys())
+
+    http_timeout = make_option(
+        "--http-timeout", "-o",
+        help="HTTP request timeout",
+        default=10,
+        type=int)
 
     def check(self):
         value = check_graphite(self.options)
