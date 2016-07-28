@@ -4,11 +4,11 @@
 
 from __future__ import print_function
 
+import functools
+import requests
 import sys
 import urllib
-import functools
-
-import requests
+from time import sleep
 from pynagios import Plugin, Response, make_option, UNKNOWN
 
 
@@ -120,7 +120,22 @@ def graphite_fetch(opts, session=None):
     url = graphite_url(opts)
     resp = session.get(url, timeout=opts.http_timeout)
 
-    return resp.json() if resp.ok else []
+    if opts.retry:
+        retry_count = 0
+        while retry_count < opts.retry:
+            retry_count = retry_count + 1
+
+            try:
+                ret = resp.json()
+                if resp.ok and ret:
+                    return ret
+            except:
+                pass
+
+            # pause before hitting the server again
+            sleep(0.2)
+    else:
+        return resp.json() if resp.ok else []
 
 
 def check_graphite(opts, session=None):
@@ -160,6 +175,12 @@ class GraphiteNagios(Plugin):
         help=("Algorithm for combining metrics, options: "
               "{0}, (default: avg)".format(F_OPTS)),
         default="avg", choices=FUNCTIONS.keys())
+
+    retry = make_option(
+        "--retry", "-r",
+        help="Retry graphite request n times before giving up",
+        default=0,
+        type=int)
 
     http_timeout = make_option(
         "--http-timeout", "-o",

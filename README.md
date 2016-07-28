@@ -25,6 +25,8 @@ Usage: nagios_graphite [options]
 Options:
   -U USERNAME, --username=USERNAME
                         Username (HTTP Basic Auth)
+  -r RETRY, --retry=RETRY
+                        Retry graphite request n times before giving up
   -N NAME, --name=NAME  Metric name
   -A FUNC, --algorithm=FUNC
                         Algorithm for combining metrics, options: nullpct,
