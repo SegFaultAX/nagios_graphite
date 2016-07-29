@@ -5,10 +5,11 @@
 from __future__ import print_function
 
 import functools
-import requests
 import sys
 import urllib
 from time import sleep
+
+import requests
 from pynagios import Plugin, Response, make_option, UNKNOWN
 
 
