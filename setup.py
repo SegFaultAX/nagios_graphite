@@ -55,6 +55,11 @@ PYTEST_FLAGS = ['--doctest-modules']
 metadata = imp.load_source(
     'metadata', os.path.join(CODE_DIRECTORY, 'metadata.py'))
 
+if os.environ['GO_PIPELINE_COUNTER']:
+    rpm_version = '%s.%s' % (metadata.version, os.environ['GO_PIPELINE_COUNTER'])
+else:
+    rpm_version = metadata.version
+
 
 ## Miscellaneous helper functions
 
@@ -227,7 +232,7 @@ if sys.version_info < (2, 7) or (3, 0) <= sys.version_info < (3, 3):
 # <http://pythonhosted.org/setuptools/setuptools.html>
 setup_dict = dict(
     name=metadata.package,
-    version=metadata.version,
+    version=rpm_version,
     author=metadata.authors[0],
     author_email=metadata.emails[0],
     maintainer=metadata.authors[0],
