@@ -5,13 +5,13 @@
 from __future__ import print_function
 
 import functools
+import os
 import sys
 import urllib
 from time import sleep
 
 import requests
 from pynagios import Plugin, Response, make_option, UNKNOWN
-
 
 class EmptyQueryResult(Exception):
     pass
@@ -119,6 +119,8 @@ def graphite_fetch(opts, session=None):
         session = graphite_session(opts)
 
     url = graphite_url(opts)
+    if opts.debug:
+        print("{0}".format(url))
     resp = session.get(url, timeout=opts.http_timeout)
 
     if opts.retry:
@@ -189,6 +191,18 @@ class GraphiteNagios(Plugin):
         default=10,
         type=int)
 
+    notes = make_option(
+        "--notes", "-n",
+        help="Notes to be added to the alert")
+
+    action = make_option(
+        "--action", "-a",
+        help="Actions to be listed in the alert")
+
+    debug = make_option(
+        "--debug", "-d",
+        help="Print the graphite URL", action="store_true")
+
     def check(self):
         value = check_graphite(self.options)
         if value is None:
@@ -200,10 +214,34 @@ class GraphiteNagios(Plugin):
         response.set_perf_data(self.options.func, value)
         return response
 
+    def status_str(self, response):
+        result = "%s:" % response.status.name
+
+        if response.message is not None:
+            result += " %s" % response.message
+
+        if len(response.perf_data) > 0:
+            # Attach the performance data to the result
+            data = [str(val) for key,val in response.perf_data.iteritems()]
+            result += '|%s' % (' '.join(data))
+
+        if self.options.notes:
+            result += "\nNotes: {0}\n".format(self.options.notes)
+
+        if self.options.action:
+            result += "\nAction: {0}\n".format(self.options.action)
+
+        return (response.status.exit_code, result)
+
 
 def main(args):
     try:
-        return GraphiteNagios(args).check().exit()
+        nag = GraphiteNagios(args)
+        response = nag.check()
+        (exit_code, msg) = nag.status_str(response)
+
+        print(msg)
+        return sys.exit(exit_code)
     except Exception as e:
         message = "{0}: {1}".format(e.__class__.__name__, str(e))
         Response(UNKNOWN, "Client error: " + message).exit()
