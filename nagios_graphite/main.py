@@ -175,7 +175,11 @@ class GraphiteNagios(Plugin):
         message = "{0} ({1} is {2})".format(
             self.options.name, self.options.func, value)
         response = self.response_for_value(value, message)
-        response.set_perf_data(self.options.func, value)
+        try:
+            response.set_perf_data(self.options.func, value)
+        except ValueError as e:
+            raise ValueError("failed to set {} as perf data: {}".format(
+                value, str(e)))
         return response
 
 
