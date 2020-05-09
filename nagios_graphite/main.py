@@ -4,13 +4,14 @@
 
 from __future__ import print_function
 
+import functools
+import os
 import sys
 import urllib
-import functools
+from time import sleep
 
 import requests
 from pynagios import Plugin, Response, make_option, UNKNOWN
-
 
 class EmptyQueryResult(Exception):
     pass
@@ -118,9 +119,26 @@ def graphite_fetch(opts, session=None):
         session = graphite_session(opts)
 
     url = graphite_url(opts)
+    if opts.debug:
+        print("{0}".format(url))
     resp = session.get(url, timeout=opts.http_timeout)
 
-    return resp.json() if resp.ok else []
+    if opts.retry:
+        retry_count = 0
+        while retry_count < opts.retry:
+            retry_count = retry_count + 1
+
+            try:
+                ret = resp.json()
+                if resp.ok and ret:
+                    return ret
+            except:
+                pass
+
+            # pause before hitting the server again
+            sleep(0.2)
+    else:
+        return resp.json() if resp.ok else []
 
 
 def check_graphite(opts, session=None):
@@ -161,11 +179,29 @@ class GraphiteNagios(Plugin):
               "{0}, (default: avg)".format(F_OPTS)),
         default="avg", choices=FUNCTIONS.keys())
 
+    retry = make_option(
+        "--retry", "-r",
+        help="Retry graphite request n times before giving up",
+        default=0,
+        type=int)
+
     http_timeout = make_option(
         "--http-timeout", "-o",
         help="HTTP request timeout",
         default=10,
         type=int)
+
+    notes = make_option(
+        "--notes", "-n",
+        help="Notes to be added to the alert")
+
+    action = make_option(
+        "--action", "-a",
+        help="Actions to be listed in the alert")
+
+    debug = make_option(
+        "--debug", "-d",
+        help="Print the graphite URL", action="store_true")
 
     def check(self):
         value = check_graphite(self.options)
@@ -182,10 +218,34 @@ class GraphiteNagios(Plugin):
                 value, str(e)))
         return response
 
+    def status_str(self, response):
+        result = "%s:" % response.status.name
+
+        if response.message is not None:
+            result += " %s" % response.message
+
+        if len(response.perf_data) > 0:
+            # Attach the performance data to the result
+            data = [str(val) for key,val in response.perf_data.iteritems()]
+            result += '|%s' % (' '.join(data))
+
+        if self.options.notes:
+            result += "\nNotes: {0}\n".format(self.options.notes)
+
+        if self.options.action:
+            result += "\nAction: {0}\n".format(self.options.action)
+
+        return (response.status.exit_code, result)
+
 
 def main(args):
     try:
-        return GraphiteNagios(args).check().exit()
+        nag = GraphiteNagios(args)
+        response = nag.check()
+        (exit_code, msg) = nag.status_str(response)
+
+        print(msg)
+        return sys.exit(exit_code)
     except Exception as e:
         message = "{0}: {1}".format(e.__class__.__name__, str(e))
         Response(UNKNOWN, "Client error: " + message).exit()
